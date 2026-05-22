@@ -315,20 +315,39 @@ function getBossForRound(round) {
 }
 
 function renderBoard(winningCells = []) {
-  boardElement.innerHTML = "";
-  boardElement.style.gridTemplateColumns = `repeat(${match?.columns ?? BASE_COLUMNS}, 1fr)`;
-  boardElement.style.aspectRatio = `${match?.columns ?? BASE_COLUMNS} / ${match?.rows ?? BASE_ROWS}`;
+  const columns = match?.columns ?? BASE_COLUMNS;
+  const rows = match?.rows ?? BASE_ROWS;
+  boardElement.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+  boardElement.style.aspectRatio = `${columns} / ${rows}`;
   const wins = new Set(winningCells.map(([row, column]) => cellKey(row, column)));
+
+  const existingCells = boardElement.querySelectorAll(".cell");
+  const needsRebuild = existingCells.length !== rows * columns;
+
+  if (needsRebuild) {
+    boardElement.innerHTML = "";
+  }
 
   for (let row = 0; row < board.length; row += 1) {
     for (let column = 0; column < board[row].length; column += 1) {
       const piece = board[row][column];
-      const cell = document.createElement("button");
+      const index = row * columns + column;
+
+      let cell;
+      if (needsRebuild) {
+        cell = document.createElement("button");
+        cell.type = "button";
+        cell.dataset.row = row;
+        cell.dataset.column = column;
+        boardElement.append(cell);
+      } else {
+        cell = existingCells[index];
+      }
+
       cell.className = "cell";
-      cell.type = "button";
-      cell.dataset.row = row;
-      cell.dataset.column = column;
       cell.disabled = !match || match.gameOver || match.aiThinking || currentOwner !== OWNER.PLAYER;
+      cell.removeAttribute("data-timer");
+      cell.style.removeProperty("--drop-distance");
 
       if (piece) {
         cell.classList.add(piece.owner, piece.type);
@@ -349,8 +368,6 @@ function renderBoard(winningCells = []) {
       if (wins.has(cellKey(row, column))) {
         cell.classList.add("win");
       }
-
-      boardElement.append(cell);
     }
   }
 }
@@ -404,7 +421,7 @@ function dropPiece(column, owner, type = PIECE.NORMAL, targetRow = null) {
     if (placed) {
       flashRule("SPLIT");
       tickTimedEffects();
-      renderBoard();
+      requestAnimationFrame(() => renderBoard());
     }
     return placed;
   }
@@ -416,7 +433,7 @@ function dropPiece(column, owner, type = PIECE.NORMAL, targetRow = null) {
   const placed = dropSinglePiece(column, owner, finalType, targetRow);
   if (placed) {
     tickTimedEffects();
-    renderBoard();
+    requestAnimationFrame(() => renderBoard());
   }
   return placed;
 }
@@ -1016,7 +1033,7 @@ function finishBattle(winner, winningCells) {
 
   winnerKicker.textContent = bossWon ? "Boss besiegt" : "Sieg";
   winnerTitle.textContent = bossWon ? `${match.boss.name} besiegt` : "Runde gewonnen";
-  winnerText.textContent = bossWon ? "+$25 und ein Perk. Danach darfst du shoppen." : "+$10. Danach darfst du shoppen.";
+  winnerText.textContent = bossWon ? "+$25 und ein Perk." : "+$10.";
   continueRunButton.textContent = bossWon ? "Perk waehlen" : "Zum Shop";
 }
 
