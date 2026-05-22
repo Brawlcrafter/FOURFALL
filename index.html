@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FOURFALL</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="game-shell">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">10-Win Boss Streak</p>
+            <h1>FOURFALL</h1>
+            <p id="status" class="status">Starte einen Run</p>
+          </div>
+          <p class="credit">von Timo, Johannes-Turmair-Gymnasium im Rahmen von Q12inf</p>
+          <div class="actions">
+            <button id="tutorialButton" class="ghost-button" type="button">Hauptmenue</button>
+            <button id="runButton" type="button">Neuer Run</button>
+            <button id="shopButton" class="ghost-button" type="button">Shop</button>
+          </div>
+        </header>
+
+        <section class="run-strip" aria-label="Run Fortschritt">
+          <div>
+            <span class="label">Siege</span>
+            <strong id="streakLabel">0/10</strong>
+          </div>
+          <div>
+            <span class="label">Gegner</span>
+            <strong id="enemyLabel">-</strong>
+          </div>
+          <div>
+            <span class="label">Win</span>
+            <strong id="winLabel">4 / 4</strong>
+          </div>
+          <div>
+            <span class="label">Gegner-Win</span>
+            <strong id="enemyWinLabel">4</strong>
+          </div>
+          <div>
+            <span class="label">Geld</span>
+            <strong id="moneyLabel">$0</strong>
+          </div>
+        </section>
+
+        <div id="visionBox" class="vision-box hidden"></div>
+
+        <div class="arena" aria-live="polite">
+          <div id="turnIndicator" class="turn-indicator player">PLAYER</div>
+          <div id="board" class="board" aria-label="Spielfeld"></div>
+        </div>
+
+        <section class="loadout">
+          <div>
+            <h2>Gekaufte Steine</h2>
+            <div id="inventoryTray" class="chip-row"></div>
+          </div>
+          <div>
+            <h2>Perks</h2>
+            <div id="perkTray" class="chip-row"></div>
+          </div>
+          <div>
+            <h2>Aktionen</h2>
+            <div class="tool-row">
+              <button id="freezePowerButton" class="tool-button" type="button">Freeze</button>
+              <button id="deletePowerButton" class="tool-button" type="button">Delete</button>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="startScreen" class="overlay">
+        <div class="dialog tutorial-dialog">
+          <p class="eyebrow">FOURFALL</p>
+          <h2>Gewinne 10 Runden in Folge.</h2>
+          <p class="dialog-copy">
+            Jede zweite Runde ist ein Boss. Verlierst du einmal, faengt der Run wieder bei 0 an. Nach normalen Siegen bekommst du $10, nach Bossen $25 und ein Perk.
+          </p>
+          <div class="tutorial-grid">
+            <section>
+              <h3>Loop</h3>
+              <p>Battle gewinnen, Geld kassieren, im Shop Spezialsteine kaufen, vor dem Einwurf einen Stein aus deinem Inventar waehlen.</p>
+            </section>
+            <section>
+              <h3>Scaling</h3>
+              <p>Nach jedem Sieg wachsen Board-Breite, Board-Hoehe und Win-Condition um 1. Runde 10 ist der Endboss.</p>
+            </section>
+          </div>
+          <div class="codex">
+            <section>
+              <h3>Steintypen</h3>
+              <div id="tutorialPieces" class="codex-list"></div>
+            </section>
+            <section>
+              <h3>Perks</h3>
+              <div id="tutorialPerks" class="codex-list"></div>
+            </section>
+            <section>
+              <h3>Bosse</h3>
+              <div id="tutorialBosses" class="codex-list"></div>
+            </section>
+            <section>
+              <h3>Regeln</h3>
+              <div class="codex-list">
+                <article class="codex-item"><div><strong>Boss jede 2. Runde</strong><span>streak</span></div><p>Runde 2, 4, 6 und 8 sind zufaellige Bosse. Runde 10 ist THE GAME ITSELF.</p></article>
+                <article class="codex-item"><div><strong>Shop nach Siegen</strong><span>$5</span></div><p>Ein Spezialstein kostet $5. Gekaufte Steine sind Verbrauchsgegenstaende.</p></article>
+                <article class="codex-item"><div><strong>Run Reset</strong><span>lose</span></div><p>Verlierst du, werden Siege, Geld, Perks und Inventar auf 0 gesetzt.</p></article>
+              </div>
+            </section>
+            <section>
+              <h3>Erfolge</h3>
+              <div id="tutorialAchievements" class="codex-list"></div>
+            </section>
+          </div>
+          <div class="mode-grid">
+            <button id="continueMenuButton" class="mode-card ghost-button hidden" type="button">
+              <span>Run fortsetzen</span>
+              <small>Zurueck zum aktuellen Kampf</small>
+            </button>
+            <button id="startRunButton" class="mode-card" type="button">
+              <span>Run starten</span>
+              <small>10 Siege oder Neustart</small>
+            </button>
+            <div class="training-card">
+              <label for="trainingBossSelect">Trainingsboss</label>
+              <select id="trainingBossSelect"></select>
+              <button id="trainingButton" class="mode-card" type="button">
+                <span>Trainieren</span>
+                <small>Alle Steintypen unendlich</small>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="shopScreen" class="overlay hidden">
+        <div class="dialog">
+          <p class="eyebrow">Shop</p>
+          <h2>Steine kaufen</h2>
+          <p id="shopText" class="dialog-copy">Ein Steintyp kostet $5.</p>
+          <div id="shopGrid" class="reward-grid"></div>
+          <div class="winner-actions">
+            <button id="nextBattleButton" type="button">Naechste Runde</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="perkScreen" class="overlay hidden">
+        <div class="dialog">
+          <p class="eyebrow">Boss Reward</p>
+          <h2>Waehle ein Perk</h2>
+          <div id="perkGrid" class="reward-grid"></div>
+        </div>
+      </section>
+
+      <section id="winnerScreen" class="overlay hidden">
+        <div class="dialog winner-dialog">
+          <p id="winnerKicker" class="eyebrow">Battle vorbei</p>
+          <h2 id="winnerTitle">Victory</h2>
+          <p id="winnerText">Weiter geht's.</p>
+          <div class="winner-actions">
+            <button id="continueRunButton" type="button">Weiter</button>
+            <button id="trainingMenuButton" class="ghost-button hidden" type="button">Mit neuem Boss starten</button>
+            <button id="newRunButton" class="ghost-button" type="button">Hauptmenue</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
