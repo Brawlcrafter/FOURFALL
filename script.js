@@ -48,7 +48,6 @@ const BUYABLE_TYPES = [
 
 const PERKS = [
   { id: "random", name: "Random", text: "20% Chance, dass dein normaler Stein ein zufaelliger Spezialtyp wird." },
-  { id: "vision", name: "Vision", text: "Zeigt den naechsten geplanten Zug der AI an." },
   { id: "freezeMaster", name: "Freeze Master", text: "Du erhaeltst Ladungen, um Spalten fuer 5 Zuege einzufrieren." },
   { id: "lower", name: "Lower", text: "Deine Win-Condition wird um 1 gesenkt." },
   { id: "higher", name: "Higher", text: "Die gegnerische Win-Condition wird um 1 erhoeht." },
@@ -119,8 +118,6 @@ const runButton = document.querySelector("#runButton");
 const tutorialButton = document.querySelector("#tutorialButton");
 const shopButton = document.querySelector("#shopButton");
 const startScreen = document.querySelector("#startScreen");
-const startRunButton = document.querySelector("#startRunButton");
-const continueMenuButton = document.querySelector("#continueMenuButton");
 const trainingButton = document.querySelector("#trainingButton");
 const trainingBossSelect = document.querySelector("#trainingBossSelect");
 const shopScreen = document.querySelector("#shopScreen");
@@ -150,7 +147,33 @@ const visionBox = document.querySelector("#visionBox");
 const tutorialPieces = document.querySelector("#tutorialPieces");
 const tutorialPerks = document.querySelector("#tutorialPerks");
 const tutorialBosses = document.querySelector("#tutorialBosses");
-const tutorialAchievements = document.querySelector("#tutorialAchievements");
+const landingScreen = document.querySelector("#landingScreen");
+const landingRunButton = document.querySelector("#landingRunButton");
+const landingTrainButton = document.querySelector("#landingTrainButton");
+const landingInfoButton = document.querySelector("#landingInfoButton");
+const landingAchievButton = document.querySelector("#landingAchievButton");
+const landingBossSelect = document.querySelector("#landingBossSelect");
+const landingContinueButton = document.querySelector("#landingContinueButton");
+const trainSelectScreen = document.querySelector("#trainSelectScreen");
+const confirmTrainButton = document.querySelector("#confirmTrainButton");
+const closeTrainSelectButton = document.querySelector("#closeTrainSelectButton");
+const achievementScreen = document.querySelector("#achievementScreen");
+const achievementList = document.querySelector("#achievementList");
+const closeInfoButton = document.querySelector("#closeInfoButton");
+const closeAchievButton = document.querySelector("#closeAchievButton");
+
+
+function fitBoard() {
+  const topbar = document.querySelector(".topbar");
+  const topbarH = topbar ? topbar.offsetHeight : 0;
+  const availH = (window.innerHeight - 28 - topbarH - 67);
+  const cols = match ? match.columns : 7;
+  const rows = match ? match.rows : 6;
+  document.documentElement.style.setProperty("--board-max-h", availH + "px");
+  document.documentElement.style.setProperty("--board-ratio", cols + " / " + rows);
+}
+
+window.addEventListener("resize", fitBoard);
 
 let run = null;
 let match = null;
@@ -181,9 +204,12 @@ function startRun() {
   startBattle();
 }
 
-function startTraining() {
+let savedRun = null;
+
+function startTraining(boss) {
+  if (canContinueRun() && !run?.training) savedRun = { run: structuredClone(run), board: board.map(r => r.map(c => c ? {...c} : c)) };
   trainingMenuButton.classList.add("hidden");
-  const boss = [...BOSSES, FINAL_BOSS].find((item) => item.id === trainingBossSelect.value) ?? BOSSES[0];
+  boss = boss ?? [...BOSSES, FINAL_BOSS].find((item) => item.id === trainingBossSelect.value) ?? BOSSES[0];
   run = {
     training: true,
     trainingBoss: boss,
@@ -279,6 +305,7 @@ function startBattle() {
   playSound(boss ? "boss" : "start");
   updateHud();
   renderBoard();
+  fitBoard();
   updatePlayerVision();
 }
 
@@ -560,6 +587,7 @@ function convertAdjacent(row, column, owner) {
 function explodeAround(row, column) {
   flashRule("BOMB");
   playSound("combo");
+  spawnExplosion(row, column, "bomb");
   for (let r = row - 1; r <= row + 1; r += 1) {
     for (let c = column - 1; c <= column + 1; c += 1) {
       destroyCell(r, c);
@@ -570,8 +598,49 @@ function explodeAround(row, column) {
 function explodeRow(row) {
   flashRule("DYNAMITE");
   playSound("combo");
+  spawnExplosion(row, null, "dynamite");
   for (let column = 0; column < match.columns; column += 1) {
     destroyCell(row, column);
+  }
+}
+
+function spawnExplosion(row, column, type) {
+  const cells = boardElement.querySelectorAll(".cell");
+  const columns = match?.columns ?? BASE_COLUMNS;
+
+  if (type === "bomb" && column !== null) {
+    const idx = row * columns + column;
+    const cell = cells[idx];
+    if (!cell) return;
+    const rect = cell.getBoundingClientRect();
+    const boardRect = boardElement.getBoundingClientRect();
+    const el = document.createElement("div");
+    el.className = "explosion-overlay";
+    el.style.width = rect.width + "px";
+    el.style.height = rect.height + "px";
+    el.style.left = (rect.left - boardRect.left) + "px";
+    el.style.top = (rect.top - boardRect.top) + "px";
+    boardElement.append(el);
+    el.addEventListener("animationend", () => el.remove());
+  }
+
+  if (type === "dynamite") {
+    const firstIdx = row * columns;
+    const lastIdx = row * columns + columns - 1;
+    const firstCell = cells[firstIdx];
+    const lastCell = cells[lastIdx];
+    if (!firstCell || !lastCell) return;
+    const boardRect = boardElement.getBoundingClientRect();
+    const firstRect = firstCell.getBoundingClientRect();
+    const lastRect = lastCell.getBoundingClientRect();
+    const el = document.createElement("div");
+    el.className = "explosion-row";
+    el.style.left = (firstRect.left - boardRect.left) + "px";
+    el.style.top = (firstRect.top - boardRect.top) + "px";
+    el.style.width = (lastRect.right - firstRect.left) + "px";
+    el.style.height = firstRect.height + "px";
+    boardElement.append(el);
+    el.addEventListener("animationend", () => el.remove());
   }
 }
 
@@ -634,6 +703,7 @@ function orthogonal(row, column) {
 }
 
 function applyGravity() {
+  const fallingCells = [];
   for (let column = 0; column < match.columns; column += 1) {
     let writeRow = match.rows - 1;
     for (let row = match.rows - 1; row >= 0; row -= 1) {
@@ -647,8 +717,20 @@ function applyGravity() {
         board[writeRow][column] = piece;
         board[row][column] = EMPTY;
         match.lastMove = { row: writeRow, column };
+        fallingCells.push({ row: writeRow, column, fallFrom: writeRow - row });
       }
       writeRow -= 1;
+    }
+  }
+  renderBoard();
+  const columns = match?.columns ?? BASE_COLUMNS;
+  for (const { row, column, fallFrom } of fallingCells) {
+    const cells = boardElement.querySelectorAll(".cell");
+    const cell = cells[row * columns + column];
+    if (cell) {
+      cell.style.setProperty("--fall-from", `${fallFrom * -40}px`);
+      cell.classList.add("falling");
+      cell.addEventListener("animationend", () => cell.classList.remove("falling"), { once: true });
     }
   }
 }
@@ -675,6 +757,7 @@ function resolveAfterMove(owner) {
   statusElement.textContent = "PLAYER ist am Zug";
   updateHud();
   renderBoard();
+  fitBoard();
   updatePlayerVision();
 }
 
@@ -689,6 +772,7 @@ function beginEnemyTurn() {
   hideVision();
   updateHud();
   renderBoard();
+  fitBoard();
   window.setTimeout(() => {
     if (!match || match.gameOver) return;
     match.aiThinking = false;
@@ -808,10 +892,9 @@ function chooseGameBossAbility() {
 
 function changeRules() {
   const options = [
-    () => {
+() => {
       match.playerWin += 1;
-      match.enemyWin += 1;
-      match.ruleText = `Win-Regel veraendert: Beide brauchen jetzt ${match.playerWin}/${match.enemyWin}.`;
+      match.ruleText = `Win-Regel veraendert: Du brauchst jetzt ${match.playerWin} in Folge.`;
       flashRule("RULE: +1 WIN");
     },
     () => {
@@ -1187,6 +1270,7 @@ function useFreezeMaster(column) {
   flashRule("FREEZE MASTER");
   updateHud();
   renderBoard();
+  fitBoard();
 }
 
 function useDeletion(row, column) {
@@ -1201,10 +1285,11 @@ function useDeletion(row, column) {
   }
   updateHud();
   renderBoard();
+  fitBoard();
 }
 
 function updatePlayerVision() {
-  if (!hasPerk("vision") || !match || match.gameOver) {
+  {
     hideVision();
     return;
   }
@@ -1298,7 +1383,6 @@ function renderTutorial() {
   tutorialPieces.innerHTML = "";
   tutorialPerks.innerHTML = "";
   tutorialBosses.innerHTML = "";
-  tutorialAchievements.innerHTML = "";
   for (const type of BUYABLE_TYPES) {
     tutorialPieces.append(createCodexItem(PIECE_INFO[type].name, PIECE_INFO[type].text, "$5"));
   }
@@ -1308,8 +1392,52 @@ function renderTutorial() {
   for (const boss of [...BOSSES, FINAL_BOSS]) {
     tutorialBosses.append(createCodexItem(boss.name, boss.text, boss.id));
   }
+  trainingBossSelect.innerHTML = "";
+  for (const boss of [...BOSSES, FINAL_BOSS]) {
+    const option = document.createElement("option");
+    option.value = boss.id;
+    option.textContent = boss.name;
+    trainingBossSelect.append(option);
+  }
+  landingBossSelect.innerHTML = "";
+  for (const boss of [...BOSSES, FINAL_BOSS]) {
+    const option = document.createElement("option");
+    option.value = boss.id;
+    option.textContent = boss.name;
+    landingBossSelect.append(option);
+  }
+  updateMainMenuState();
+}
+
+function canContinueRun() {
+  if (savedRun) return true;
+  return Boolean(
+    run &&
+      match &&
+      !match.gameOver &&
+      !run.training &&
+      shopScreen.classList.contains("hidden") &&
+      perkScreen.classList.contains("hidden") &&
+      winnerScreen.classList.contains("hidden"),
+  );
+}
+
+function updateMainMenuState() {
+}
+
+function openMainMenu(from = "game") {
+  renderTutorial();
+  winnerScreen.classList.add("hidden");
+  trainingMenuButton.classList.add("hidden");
+  landingContinueButton.classList.toggle("hidden", !canContinueRun());
+  landingScreen.classList.remove("hidden");
+  startScreen.dataset.from = from;
+}
+
+function openAchievements() {
+  achievementList.innerHTML = "";
   for (const achievement of ACHIEVEMENTS) {
-    tutorialAchievements.append(
+    achievementList.append(
       createCodexItem(
         achievement.name,
         achievement.text,
@@ -1318,44 +1446,27 @@ function renderTutorial() {
       ),
     );
   }
-  trainingBossSelect.innerHTML = "";
-  for (const boss of [...BOSSES, FINAL_BOSS]) {
-    const option = document.createElement("option");
-    option.value = boss.id;
-    option.textContent = boss.name;
-    trainingBossSelect.append(option);
-  }
-  updateMainMenuState();
-}
-
-function canContinueRun() {
-  return Boolean(
-    run &&
-      match &&
-      !match.gameOver &&
-      shopScreen.classList.contains("hidden") &&
-      perkScreen.classList.contains("hidden") &&
-      winnerScreen.classList.contains("hidden"),
-  );
-}
-
-function updateMainMenuState() {
-  continueMenuButton.classList.toggle("hidden", !canContinueRun());
-}
-
-function openMainMenu() {
-  renderTutorial();
-  winnerScreen.classList.add("hidden");
-  trainingMenuButton.classList.add("hidden");
-  startScreen.classList.remove("hidden");
+  achievementScreen.classList.remove("hidden");
 }
 
 function resumeRunFromMenu() {
+  if (savedRun) {
+    run = savedRun.run;
+    board = savedRun.board;
+    savedRun = null;
+    landingScreen.classList.add("hidden");
+    startScreen.classList.add("hidden");
+    updateHud();
+    renderBoard();
+    fitBoard();
+    return;
+  }
   if (!canContinueRun()) return;
+  landingScreen.classList.add("hidden");
   startScreen.classList.add("hidden");
   updateHud();
   renderBoard();
-  updatePlayerVision();
+  fitBoard();
 }
 
 function createCodexItem(name, text, tag, unlocked = true) {
@@ -1433,6 +1544,8 @@ function flashRule(text) {
 }
 
 function hideOverlays() {
+  landingScreen.classList.add("hidden");
+  trainSelectScreen.classList.add("hidden");
   startScreen.classList.add("hidden");
   shopScreen.classList.add("hidden");
   perkScreen.classList.add("hidden");
@@ -1477,13 +1590,44 @@ boardElement.addEventListener("click", (event) => {
   handleBoardClick(Number(cell.dataset.row), Number(cell.dataset.column));
 });
 runButton.addEventListener("click", startRun);
-startRunButton.addEventListener("click", startRun);
-continueMenuButton.addEventListener("click", resumeRunFromMenu);
-trainingButton.addEventListener("click", startTraining);
-trainingMenuButton.addEventListener("click", openMainMenu);
-newRunButton.addEventListener("click", openMainMenu);
-tutorialButton.addEventListener("click", openMainMenu);
-shopButton.addEventListener("click", openShop);
+landingRunButton.addEventListener("click", startRun);
+landingTrainButton.addEventListener("click", () => {
+  landingScreen.classList.add("hidden");
+  trainSelectScreen.classList.remove("hidden");
+});
+confirmTrainButton.addEventListener("click", () => {
+  const boss = [...BOSSES, FINAL_BOSS].find((b) => b.id === landingBossSelect.value) ?? BOSSES[0];
+  startTraining(boss);
+});
+closeTrainSelectButton.addEventListener("click", () => {
+  trainSelectScreen.classList.add("hidden");
+  landingScreen.classList.remove("hidden");
+});
+landingInfoButton.addEventListener("click", () => {
+  renderTutorial();
+  startScreen.dataset.from = "landing";
+  startScreen.classList.remove("hidden");
+});
+landingAchievButton.addEventListener("click", openAchievements);
+closeAchievButton.addEventListener("click", () => achievementScreen.classList.add("hidden"));
+closeInfoButton.addEventListener("click", () => {
+  startScreen.classList.add("hidden");
+  if (startScreen.dataset.from === "landing") {
+    landingScreen.classList.remove("hidden");
+  }
+});
+trainingMenuButton.addEventListener("click", () => openMainMenu("landing"));
+newRunButton.addEventListener("click", () => openMainMenu("landing"));
+tutorialButton.addEventListener("click", () => {
+  hideOverlays();
+  landingContinueButton.classList.toggle("hidden", !canContinueRun());
+  landingScreen.classList.remove("hidden");
+});
+shopButton.addEventListener("click", () => {
+  renderTutorial();
+  startScreen.dataset.from = "game";
+  startScreen.classList.remove("hidden");
+});
 nextBattleButton.addEventListener("click", nextBattle);
 continueRunButton.addEventListener("click", continueRun);
 freezePowerButton.addEventListener("click", () => {
@@ -1496,8 +1640,21 @@ deletePowerButton.addEventListener("click", () => {
   targetingPower = targetingPower === "delete" ? null : "delete";
   statusElement.textContent = targetingPower ? "Waehle einen Gegnerstein zum Loeschen." : "PLAYER ist am Zug";
 });
+landingContinueButton.addEventListener("click", () => {
+  landingScreen.classList.add("hidden");
+  resumeRunFromMenu();
+});
 
 renderTutorial();
 updateHud();
 board = createBoard(BASE_ROWS, BASE_COLUMNS);
 renderBoard();
+landingScreen.classList.remove("hidden");
+// landingBossSelect direkt beim Start befüllen
+landingBossSelect.innerHTML = "";
+for (const boss of [...BOSSES, FINAL_BOSS]) {
+  const option = document.createElement("option");
+  option.value = boss.id;
+  option.textContent = boss.name;
+  landingBossSelect.append(option);
+}

@@ -15,64 +15,92 @@
             <h1>FOURFALL</h1>
             <p id="status" class="status">Starte einen Run</p>
           </div>
-          <p class="credit">von Timo, Johannes-Turmair-Gymnasium im Rahmen von Q12inf</p>
+          <p class="credit">von Timo Schambeck, Johannes-Turmair-Gymnasium im Rahmen von Q12inf</p>
           <div class="actions">
-            <button id="tutorialButton" class="ghost-button" type="button">Hauptmenue</button>
-            <button id="runButton" type="button">Neuer Run</button>
-            <button id="shopButton" class="ghost-button" type="button">Shop</button>
+		<button id="tutorialButton" class="ghost-button" type="button">Hauptmenue</button>
+		<button id="runButton" type="button">Neuer Run</button>
+		<button id="shopButton" class="ghost-button" type="button">Info</button>
           </div>
         </header>
 
-        <section class="run-strip" aria-label="Run Fortschritt">
-          <div>
-            <span class="label">Siege</span>
-            <strong id="streakLabel">0/10</strong>
-          </div>
-          <div>
-            <span class="label">Gegner</span>
-            <strong id="enemyLabel">-</strong>
-          </div>
-          <div>
-            <span class="label">Win</span>
-            <strong id="winLabel">4 / 4</strong>
-          </div>
-          <div>
-            <span class="label">Gegner-Win</span>
-            <strong id="enemyWinLabel">4</strong>
-          </div>
-          <div>
-            <span class="label">Geld</span>
-            <strong id="moneyLabel">$0</strong>
-          </div>
-        </section>
+        <div class="game-columns">
+          <section class="run-strip" aria-label="Run Fortschritt">
+            <div>
+              <span class="label">Siege</span>
+              <strong id="streakLabel">0/10</strong>
+            </div>
+            <div>
+              <span class="label">Gegner</span>
+              <strong id="enemyLabel">-</strong>
+            </div>
+            <div>
+              <span class="label">Win</span>
+              <strong id="winLabel">4 / 4</strong>
+            </div>
+            <div>
+              <span class="label">Gegner-Win</span>
+              <strong id="enemyWinLabel">4</strong>
+            </div>
+            <div>
+              <span class="label">Geld</span>
+              <strong id="moneyLabel">$0</strong>
+            </div>
+          </section>
 
-        <div id="visionBox" class="vision-box hidden"></div>
-
-        <div class="arena" aria-live="polite">
-          <div id="turnIndicator" class="turn-indicator player">PLAYER</div>
-          <div id="board" class="board" aria-label="Spielfeld"></div>
-        </div>
-
-        <section class="loadout">
-          <div>
-            <h2>Gekaufte Steine</h2>
-            <div id="inventoryTray" class="chip-row"></div>
-          </div>
-          <div>
-            <h2>Perks</h2>
-            <div id="perkTray" class="chip-row"></div>
-          </div>
-          <div>
-            <h2>Aktionen</h2>
-            <div class="tool-row">
-              <button id="freezePowerButton" class="tool-button" type="button">Freeze</button>
-              <button id="deletePowerButton" class="tool-button" type="button">Delete</button>
+          <div class="game-center">
+            <div id="visionBox" class="vision-box hidden"></div>
+            <div class="arena" aria-live="polite">
+              <div id="turnIndicator" class="turn-indicator player">PLAYER</div>
+              <div id="board" class="board" aria-label="Spielfeld"></div>
             </div>
           </div>
-        </section>
+
+          <section class="loadout">
+            <div>
+              <h2>Gekaufte Steine</h2>
+              <div id="inventoryTray" class="chip-row"></div>
+            </div>
+            <div>
+              <h2>Perks</h2>
+              <div id="perkTray" class="chip-row"></div>
+            </div>
+            <div>
+              <h2>Aktionen</h2>
+              <div class="tool-row">
+                <button id="freezePowerButton" class="tool-button" type="button">Freeze</button>
+                <button id="deletePowerButton" class="tool-button" type="button">Delete</button>
+              </div>
+            </div>
+          </section>
+        </div>
       </section>
 
-      <section id="startScreen" class="overlay">
+<section id="landingScreen" class="landing-screen">
+  <p class="landing-credit">Timo Schambeck, Johannes-Turmair-Gymnasium im Rahmen von Q12inf</p>
+  <div class="landing-content">
+    <h1 class="landing-title">FOURFALL</h1>
+<div class="landing-buttons">
+      <button id="landingRunButton" type="button">Run starten</button>
+      <button id="landingContinueButton" class="ghost-button hidden" type="button">Run fortsetzen</button>
+      <button id="landingTrainButton" class="ghost-button" type="button">Trainieren</button>
+      <button id="landingAchievButton" class="ghost-button" type="button">Erfolge</button>
+      <button id="landingInfoButton" class="ghost-button" type="button">Info</button>
+    </div>
+  </div>
+</section>
+
+<section id="trainSelectScreen" class="landing-screen hidden">
+  <button id="closeTrainSelectButton" class="info-close-button" type="button" aria-label="Schliessen">✕</button>
+  <div class="landing-content">
+    <h1 class="landing-title" style="font-size: clamp(2rem, 8vw, 4rem); margin-bottom: 24px;">Boss wählen</h1>
+    <div class="landing-buttons">
+      <select id="landingBossSelect" class="landing-boss-select"></select>
+      <button id="confirmTrainButton" type="button">Training starten</button>
+    </div>
+  </div>
+</section>
+
+	<section id="startScreen" class="overlay hidden">
         <div class="dialog tutorial-dialog">
           <p class="eyebrow">FOURFALL</p>
           <h2>Gewinne 10 Runden in Folge.</h2>
@@ -110,32 +138,24 @@
                 <article class="codex-item"><div><strong>Run Reset</strong><span>lose</span></div><p>Verlierst du, werden Siege, Geld, Perks und Inventar auf 0 gesetzt.</p></article>
               </div>
             </section>
-            <section>
-              <h3>Erfolge</h3>
-              <div id="tutorialAchievements" class="codex-list"></div>
-            </section>
           </div>
-          <div class="mode-grid">
-            <button id="continueMenuButton" class="mode-card ghost-button hidden" type="button">
-              <span>Run fortsetzen</span>
-              <small>Zurueck zum aktuellen Kampf</small>
-            </button>
-            <button id="startRunButton" class="mode-card" type="button">
-              <span>Run starten</span>
-              <small>10 Siege oder Neustart</small>
-            </button>
-            <div class="training-card">
-              <label for="trainingBossSelect">Trainingsboss</label>
-              <select id="trainingBossSelect"></select>
-              <button id="trainingButton" class="mode-card" type="button">
-                <span>Trainieren</span>
-                <small>Alle Steintypen unendlich</small>
-              </button>
-            </div>
+<button id="closeInfoButton" class="info-close-button" type="button" aria-label="Schliessen">✕</button>
+          <select id="trainingBossSelect" class="hidden"></select>
+        </div>
+      </section>
+<section id="achievementScreen" class="overlay hidden">
+        <div class="dialog tutorial-dialog">
+          <button id="closeAchievButton" class="info-close-button" type="button" aria-label="Schliessen">✕</button>
+          <p class="eyebrow">Erfolge</p>
+          <h2>Deine Erfolge</h2>
+          <div class="codex" style="margin-top: 18px;">
+            <section style="grid-column: 1 / -1;">
+              <h3>Alle Erfolge</h3>
+              <div id="achievementList" class="codex-list" style="max-height: 60vh;"></div>
+            </section>
           </div>
         </div>
       </section>
-
       <section id="shopScreen" class="overlay hidden">
         <div class="dialog">
           <p class="eyebrow">Shop</p>
